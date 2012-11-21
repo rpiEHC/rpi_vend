@@ -3,9 +3,13 @@
 Open-Source vending machine software to run on a Raspberry Pi, made by students at Rensselaer Polytechnic Institute.
 
 
-# Standards
+## Development Notes
 
-Please conform code to [PEP8](http://www.python.org/dev/peps/pep-0008/).
+Please conform python2 code to [PEP8](http://www.python.org/dev/peps/pep-0008/).
+
+Assuming that all dependencies are installed, you can run python code from the command line with:
+
+    $ python myfile.py
 
 
 ## Project Members

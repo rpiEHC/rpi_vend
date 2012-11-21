@@ -28,9 +28,7 @@ build/buildinfo.properties
 build/config/buildinfo.properties
 
 # added by @theopak
-intermediate
-publish
-dev/references
+local.db
 *.project
 *.sublime-project
 *.sublime-workspace
