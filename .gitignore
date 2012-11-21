@@ -1,27 +1,39 @@
-*.py[co]
+# Numerous always-ignore extensions
+*.diff
+*.err
+*.orig
+*.log
+*.rej
+*.swo
+*.swp
+*.vi
+*~
 
-# Packages
-*.egg
-*.egg-info
-dist
-build
-eggs
-parts
-bin
-var
-sdist
-develop-eggs
-.installed.cfg
+# OS or Editor folders
+.DS_Store
+.cache
+.project
+.settings
+nbproject
+thumbs.db
 
-# Installer logs
-pip-log.txt
+# Folders to ignore
+.hg
+.svn
+publish
+.idea
 
-# Unit test / coverage reports
-.coverage
-.tox
+# build script local files
+build/buildinfo.properties
+build/config/buildinfo.properties
 
-#Translations
-*.mo
-
-#Mr Developer
-.mr.developer.cfg
+# added by @theopak
+intermediate
+publish
+dev/references
+*.project
+*.sublime-project
+*.sublime-workspace
+*.geany
+*.bak
+*.NEF
