@@ -181,14 +181,14 @@ class Purchase(Store):
 	# Compute the total dollar amount of the purchase, given the cart
 	def compute_total(self):
 		# todo
-		return 0.00
+		return -1.00
 
 	# Commit the Purchase to the table
 	def save(self):
 		# INSERT OR IGNORE is the sqlite3 equiv for INSERT IF NOT EXISTS
 		query = '''
 			INSERT OR IGNORE INTO purchases(date,uid,total,cart)
-			values('now()',?,?,?)'''
+			values(strftime('%s','now'),?,?,?)'''
 		blob = unicode(self.info['cart'])		# todo: store this properly (pickle?)
 		values = (self.info['uid'],self.info['total'],blob)
 		self.cur.execute(query,values)
@@ -283,8 +283,7 @@ def test_db():
 	it.save()
 	it2 = Item(1)
 	it2.find()
-	us = User(123456789)
-	us2 = User(0)
+	us = User(0)
 	purch = Purchase(us.uid,None)
 	purch.save()
 	print '  -- DONE --'
