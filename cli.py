@@ -1,5 +1,6 @@
 # cli.py
 # The command line interface for all vending machine operations.
+# This program is designed to run on a Raspberry Pi (RPi) under Linux.
 #
 
 
@@ -10,7 +11,7 @@ import time
 
 class Machine(object):
 	'''
-	Base (wrapper) class for all Objects comprising the vending machine.
+	Base class for Objects comprising the virtual store inside the machine.
 	'''
 
 	# Database objects
@@ -71,7 +72,7 @@ class Item(Machine):
 		}
 		self.qty = qty					# quantity in stock for this item
 
-	# Store an Item in the table
+	# Machine an Item in the table
 	def save(self):
 		query = '''
 			INSERT INTO items(loc,cost,name,long_name,desc)
@@ -89,7 +90,7 @@ class User(Machine):
 	in the database.
 	'''
 
-	# All User info is static
+	# User info is fetched from the db, not set by the program
 	iso	 = None							# From a club member's RPI RFID
 	name = None							# From club member list
 
@@ -105,6 +106,7 @@ class User(Machine):
 		else:
 			print 'Found no User with iso==' + str(iso)
 			return None
+
 
 class Purchase(Machine):
 	'''
@@ -145,9 +147,60 @@ class Purchase(Machine):
 		return
 
 
+class Hardware(object):
+	'''
+	Objects interfacing the physical vending mahcine.
+	Note that python is an interpreted language and a poor choice for
+	real-time applications. It's still good enough here.
+	This is the only class that should interface directly with GPIO.
+	See <http://code.google.com/p/raspberry-gpio-python/> for RPi.GPIO usage.
+	'''
+
+	# Hardware Info
+	#import RPi.GPIO as GPIO	# this can only be run on a RPi
+	pin = None
+
+	# Initialize
+	def __init__(self, loc, pin, mode='out'):
+		self.pin = pin
+		if mode=='in':
+			mode=='GPIO.IN'
+		else:
+			mode='GPIO.OUT'
+		#GPIO.setup(12, mode)	# config pin mode
+		return
+
+
+class Dispenser(object):
+	'''
+	A dispenser on a given shelf location. Each dispenser has a feed motor,
+	a cutting mechanism, a drawer lock, and indicators. Dispensers contain
+	GPIO components that are installed on consecutive pins.
+	(TODO-- MUX dispensers so that more can be installed)
+	'''
+
+	# Info
+	loc = None					# Shelf number of physical dispenser
+	itm	= None					# Unique Item loaded in dispenser
+	typ = 'SMD'					# SMD, DIP, or bag dispenser? (default is SMD)
+
+	# Initialize
+	def __init__(self, loc, item, typ='SMD'):
+		self.loc = loc
+		self.itm = item
+		self.typ = typ
+		# todo: init IO pins
+		return
+
+	# Dispense a quantity of Items
+	def dispense(self, qty=1):
+		# todo: advance a qty of items, cut, unlock drawer, then indicate.
+		return
+
+
 def test_db_init():
 	'''
-	This simple test loads 1 dummy row into each table
+	This simple test loads dummy rows in the 'items' and 'purchases' tables
 	'''
 	print '  -- TESTING DB --'
 	dummy_machine = Machine()
