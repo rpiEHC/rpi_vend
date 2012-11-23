@@ -1,4 +1,4 @@
-# About rpi_vend
+# About [rpi_vend](https://github.com/rpiEHC/rpi_vend)
 
 Open-Source vending machine software to run on a Raspberry Pi, made by students at Rensselaer Polytechnic Institute.
 
@@ -7,7 +7,7 @@ Open-Source vending machine software to run on a Raspberry Pi, made by students 
 
 Please conform python2 code to [PEP8](http://www.python.org/dev/peps/pep-0008/).
 
-Assuming that all dependencies are installed, you can run python code from the command line with:
+Assuming that all requirements are installed, you can run python code from the command line with:
 
     $ python myfile.py
 
