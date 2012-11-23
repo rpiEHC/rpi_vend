@@ -24,6 +24,7 @@ class Store(object):
 
 	# Terminate connections
 	def __del__(self):
+		#print "Killed " + str(self)
 		self.con.close()
 
 	# Initialize sqlite tables
@@ -32,6 +33,7 @@ class Store(object):
 			CREATE TABLE IF NOT EXISTS items(
 				loc		integer,
 				cost	real,
+				qty		integer,
 				name	text,
 				long_name text,
 				desc	text
@@ -61,27 +63,58 @@ class Item(Store):
 	'''
 
 	# Initialize the member vars for this Item
-	def __init__(self, loc, cost, qty, name=None, long_name=None, desc=None):
+	def __init__(self, loc,
+	             cost=0.00, qty=0, name=None, long_name=None, desc=None):
 		self.info = {
 			'id'	: None,
 			'loc'   : loc,				# shelf number item is located on
 			'cost'  : cost,				# cost per unit
+			'qty'	: qty,				# quantity in stock for this item
 			'name'  : name,				# display name of item (optional)
 			'long_name' : long_name,	# full name of item (optional)
 			'desc'  : desc				# 72 words recommended (optional)
 		}
-		self.qty = qty					# quantity in stock for this item
 
-	# Store an Item in the table
+	# Search the table (by loc) for a given Item
+	def find(self):
+		query = '''SELECT * FROM items WHERE loc==? LIMIT 1'''
+		self.cur.execute(query,[self.info['loc']])
+		result = self.cur.fetchone()
+		if result:
+			print "Found Item(" + str(self.info['loc']) + ")"
+			for row in result:
+				self.info['row'] = row
+			return
+		else:
+			print 'Found no Item with loc==' + str(self.info['loc'])
+			return None
+
+	# Reduce the quantity of an item remaining, else return error
+	def dispense(self, qty):
+		query = '''SELECT qty FROM items WHERE loc==? LIMIT 1'''
+		self.cur.execute(query,[self.info['loc']])
+		result = self.cur.fetchone()
+		if result[0] >= qty:
+			self.info['qty'] = result[0] - qty
+			print 'Saving that QTY is '+str(result[0])+'-->'+str(self.info['qty'])
+			query = '''UPDATE items SET qty=? WHERE loc=?'''
+			self.cur.execute(query,[self.info['qty'],self.info['loc']])
+			self.con.commit()
+			return
+		else:
+			print 'Impossible to vend '+str(qty)+' Items (because only '+str(result[0])+' remain) !'
+			return None
+
+	# Store a new Item in the table
 	def save(self):
 		query = '''
-			INSERT INTO items(loc,cost,name,long_name,desc)
-			values(?,?,?,?,?)'''
-		values = (self.info['loc'], self.info['cost'], self.info['name'],
-				  self.info['long_name'], self.info['desc'])
+			INSERT INTO items(loc,cost,qty,name,long_name,desc)
+			values(?,?,?,?,?,?)'''
+		values = (self.info['loc'], self.info['cost'], self.info['qty'],
+		          self.info['name'], self.info['long_name'], self.info['desc'])
 		self.cur.execute(query,values)
 		self.con.commit()
-		print 'Saved Item(' + self.info['name'] + ')'
+		print 'Saved Item('+str(self.info['loc'])+','+self.info['name']+')'
 
 
 class User(Store):
@@ -180,20 +213,21 @@ class Dispenser(object):
 	'''
 
 	# Info
-	loc = None					# Shelf number of physical dispenser
-	itm	= None					# Unique Item loaded in dispenser
-	typ = 'SMD'					# SMD, DIP, or bag dispenser? (default is SMD)
+	loc = 0						# Shelf number of physical dispenser
+	contents = Item(loc)		# Item contained in dispenser
 
-	# Initialize
-	def __init__(self, loc, item, typ='SMD'):
+	# Connect Store Item, Hardware pins to Dispenser
+	def __init__(self, loc):
 		self.loc = loc
-		self.itm = item
-		self.typ = typ
+		self.contents = Item(loc)
+		self.contents.find()
 		# todo: init IO pins
 		return
 
-	# Dispense a quantity of Items
+	# Dispense a quantity of Items from the machine, if possible
 	def dispense(self, qty=1):
+		if self.contents.dispense(qty)==None:
+			return None
 		# todo: advance a qty of items, cut, unlock drawer, then indicate.
 		return
 
@@ -203,14 +237,19 @@ def test_db_init():
 	This simple test loads dummy rows in the 'items' and 'purchases' tables
 	'''
 	print '  -- TESTING DB --'
-	dummy_machine = Store()
-	dummy_machine.init_db()
-	dummy_item = Item(1, 5.00, 99, 'test')
-	dummy_item.save()
-	dummy_user = User(123456789)
-	dummy_user_two = User(0)
-	dummy_purchase = Purchase(dummy_user.iso,None)
-	dummy_purchase.save()
+	mach = Store()
+	mach.init_db()
+	it = Item(1, 5.00, 99, 'test')
+	it.save()
+	it2 = Item(1)
+	it2.find()
+	disp = Dispenser(1)
+	disp.dispense(1)
+	disp.dispense(100)
+	us = User(123456789)
+	us2 = User(0)
+	purch = Purchase(us.iso,None)
+	purch.save()
 	print '  -- DONE --'
 	return
 
