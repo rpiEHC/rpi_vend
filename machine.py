@@ -25,13 +25,14 @@ class Store(object):
 	# Terminate connections
 	def __del__(self):
 		#print "Killed " + str(self)
-		self.con.close()
+		#self.con.close()
+		return
 
 	# Initialize sqlite tables
 	def init_db(self):
 		query = '''
 			CREATE TABLE IF NOT EXISTS items(
-				loc		integer,
+				loc		integer UNIQUE,
 				cost	real,
 				qty		integer,
 				name	text,
@@ -41,8 +42,9 @@ class Store(object):
 		self.cur.execute(query)
 		query = '''
 			CREATE TABLE IF NOT EXISTS users(
-				iso		integer,
-				name	text
+				uid		integer UNIQUE,
+				name	text,
+				tab		real
 			);'''
 		self.cur.execute(query)
 		query = '''
@@ -108,7 +110,7 @@ class Item(Store):
 	# Store a new Item in the table
 	def save(self):
 		query = '''
-			INSERT INTO items(loc,cost,qty,name,long_name,desc)
+			INSERT OR IGNORE INTO items(loc,cost,qty,name,long_name,desc)
 			values(?,?,?,?,?,?)'''
 		values = (self.info['loc'], self.info['cost'], self.info['qty'],
 		          self.info['name'], self.info['long_name'], self.info['desc'])
@@ -124,21 +126,38 @@ class User(Store):
 	'''
 
 	# User info is fetched from the db, not set by the program
-	iso	 = None							# From a club member's RPI RFID
+	uid	 = None							# From a club member's RPI RFID
 	name = None							# From club member list
+	verified = 0						# Is the User verified as an EHC member?
 
 	# Initialize member vars
-	def __init__(self, iso):
-		query = '''SELECT iso,name FROM users WHERE iso==? LIMIT 1'''
-		self.cur.execute(query,[iso])
+	def __init__(self, uid=0):
+		self.uid = uid
+		return
+
+	# Verify that the User exists by getting an 11-char hex string from the
+	# RFID reader and then checking it against the 'users' table.
+	def verify(self):
+		query = '''SELECT uid,name FROM users WHERE uid==? LIMIT 1'''
+		self.cur.execute(query,[self.uid])
 		result = self.cur.fetchone()
 		if result:
-			self.iso = result[0]
-			self.name= result[1]
-			print "Found User(" + str(self.iso) + ",'" + self.name + "')"
+			self.uid  = result[0]
+			self.name = result[1]
+			self.verified = 1
+			print "Verified User(" + str(self.uid) + ",'" + self.name + "')"
 		else:
-			print 'Found no User with iso==' + str(iso)
+			self.verified = 0
+			print 'Could not verify User with uid==' + str(self.uid)
 			return None
+		return
+
+	# Charge a given amount to the User's tab
+	def charge(self, amount):
+		query = '''UPDATE users SET tab=tab+? WHERE uid=?'''
+		self.cur.execute(query,[amount,self.uid])
+		self.con.commit()
+		return
 
 
 class Purchase(Store):
@@ -154,29 +173,49 @@ class Purchase(Store):
 			'date'	: None,				# datetime of transaction
 			'uid'	: uid,				# ISO of User
 			'total'	: 0.00,				# Computed total transaction
-			'cart'	: cart				# List of Items in purchase
+			'cart'	: cart				# List of each [loc,qty] to purchase
 		}
+		self.user = User(uid)
 		return
 
 	# Compute the total dollar amount of the purchase, given the cart
 	def compute_total(self):
 		# todo
-		return 0.00
-
-	# Verify that the User exists
-	def verify(self):
-		# todo
-		return
+		return -1.00
 
 	# Commit the Purchase to the table
 	def save(self):
 		query = '''
-			INSERT INTO purchases(date,uid,total,cart)
-			values('now',?,?,?)'''
-		values = (self.info['uid'],self.info['total'],self.info['cart'])
+			INSERT OR IGNORE INTO purchases(date,uid,total,cart)
+			values(strftime('%s','now'),?,?,?)'''
+		blob = unicode(self.info['cart'])		# todo: store this properly (pickle?)
+		values = (self.info['uid'],self.info['total'],blob)
 		self.cur.execute(query,values)
 		self.con.commit()
 		print 'Saved Purchase(' + str(self.info['uid']) + ')'
+		return
+
+	# Handle the Vend: Dispense an Item from the correlated Dispenser and then
+	# charge the User the total amount. This function should not be called
+	# unless the requested Items have enouch quantity in stock.
+	def vend(self):
+
+		# Is the user a club member?
+		self.user.verify()
+		if self.user.verified==0:
+			print "VEND ERROR - User is not a club member"
+			return None
+
+		# Dispense the requested quantity of each Item
+		for key,value in self.info['cart'].items():
+			key.dispense(value)
+
+		# Charge the Purchase to the verified User
+		total = self.compute_total()
+		self.user.charge(total)
+
+		# Log the purchase. That's it!
+		self.save()
 		return
 
 
@@ -232,9 +271,9 @@ class Dispenser(object):
 		return
 
 
-def test_db_init():
+def test_db():
 	'''
-	This simple test loads dummy rows in the 'items' and 'purchases' tables
+	This simple test loads example data
 	'''
 	print '  -- TESTING DB --'
 	mach = Store()
@@ -243,15 +282,28 @@ def test_db_init():
 	it.save()
 	it2 = Item(1)
 	it2.find()
-	disp = Dispenser(1)
-	disp.dispense(1)
-	disp.dispense(100)
-	us = User(123456789)
-	us2 = User(0)
-	purch = Purchase(us.iso,None)
+	us = User(0)
+	purch = Purchase(us.uid,None)
 	purch.save()
 	print '  -- DONE --'
 	return
 
 
-test_db_init()
+def test_purchase():
+	'''
+	Using example data, verify and vend a Purchase
+	'''
+	print '  -- TESTING PURCHASE --'
+	mach2 = Store()
+	it = Item(1, 5.00, 99, 'test')
+	it.save()
+	disp = Dispenser(1)
+	us = User(123456789)
+	cart = { Item(1) : 1 }
+	purch = Purchase(us.uid,cart)
+	purch.vend()
+	print '  -- DONE --'
+
+
+test_db()
+test_purchase()
