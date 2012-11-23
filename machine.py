@@ -32,7 +32,7 @@ class Store(object):
 	def init_db(self):
 		query = '''
 			CREATE TABLE IF NOT EXISTS items(
-				loc		integer,
+				loc		integer UNIQUE,
 				cost	real,
 				qty		integer,
 				name	text,
@@ -42,7 +42,7 @@ class Store(object):
 		self.cur.execute(query)
 		query = '''
 			CREATE TABLE IF NOT EXISTS users(
-				uid		integer,
+				uid		integer UNIQUE,
 				name	text,
 				tab		real
 			);'''
@@ -185,7 +185,6 @@ class Purchase(Store):
 
 	# Commit the Purchase to the table
 	def save(self):
-		# INSERT OR IGNORE is the sqlite3 equiv for INSERT IF NOT EXISTS
 		query = '''
 			INSERT OR IGNORE INTO purchases(date,uid,total,cart)
 			values(strftime('%s','now'),?,?,?)'''
