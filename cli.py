@@ -9,7 +9,7 @@ import sqlite3
 import time
 
 
-class Machine(object):
+class Store(object):
 	'''
 	Base class for Objects comprising the virtual store inside the machine.
 	'''
@@ -54,7 +54,7 @@ class Machine(object):
 		self.con.commit()
 
 
-class Item(Machine):
+class Item(Store):
 	'''
 	An Item object contains information about an item that the machine can
 	vend.
@@ -72,7 +72,7 @@ class Item(Machine):
 		}
 		self.qty = qty					# quantity in stock for this item
 
-	# Machine an Item in the table
+	# Store an Item in the table
 	def save(self):
 		query = '''
 			INSERT INTO items(loc,cost,name,long_name,desc)
@@ -84,7 +84,7 @@ class Item(Machine):
 		print 'Saved Item(' + self.info['name'] + ')'
 
 
-class User(Machine):
+class User(Store):
 	'''
 	A User object accesses information about a club member that is registered
 	in the database.
@@ -108,7 +108,7 @@ class User(Machine):
 			return None
 
 
-class Purchase(Machine):
+class Purchase(Store):
 	'''
 	A Purchase object is constructed and logged when the machine vends
 	Items to a user that already paid.
@@ -203,7 +203,7 @@ def test_db_init():
 	This simple test loads dummy rows in the 'items' and 'purchases' tables
 	'''
 	print '  -- TESTING DB --'
-	dummy_machine = Machine()
+	dummy_machine = Store()
 	dummy_machine.init_db()
 	dummy_item = Item(1, 5.00, 99, 'test')
 	dummy_item.save()
