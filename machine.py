@@ -91,6 +91,21 @@ class Item(Store):
 			print 'Found no Item with loc==' + str(self.info['loc'])
 			return None
 
+	# Search the table (by loc) for a given Item
+	@staticmethod
+	def listItems(store):
+		templist = []
+		query = '''SELECT * FROM items'''
+		store.cur.execute(query)
+		result = store.cur.fetchall()
+		if result:
+			print "Items Found"
+			for row in result:
+				x = Item(0)
+				x.info['row'] = row
+				templist.append(x)
+		return templist
+
 	# Reduce the quantity of an item remaining, else return error
 	def dispense(self, qty):
 		query = '''SELECT qty FROM items WHERE loc==? LIMIT 1'''
