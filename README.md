@@ -18,7 +18,10 @@ Assuming that all requirements are installed, you can run python code from the c
   - <mail@theopak.com>
   - Rensselaer Polytechnic Institute Class of 2015
   - GitHub: [theopak](https://github.com/theopak)
-
+* Zachary Torre
+  - <torrez@rpi.edu>
+  - Rensselaer Polytechnic Institute Class of 2012
+  - GitHub: [zacharyTorre](https://github.com/ZacharyTorre)
 
 ## License
 
