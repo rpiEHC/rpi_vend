@@ -62,7 +62,7 @@ class VendingMachineGTK:
                 #print tempTuple
                 cart.append(tempTuple)
         #print cart
-        entry = Purchase(999999999. cart)        
+        entry = Purchase(999999999, cart)        
         entry.vend()
         notebook1.set_current_page(0)        
                 
@@ -113,7 +113,7 @@ class VendingMachineGTK:
 
         for listItem in self.itemsListStore:
             if listItem[3] > 0:
-                print (listItem[0],listItem[1],listItem[2],listItem[3],listItem[4])
+                #print (listItem[0],listItem[1],listItem[2],listItem[3],listItem[4])
                 listItem[3] = 0
                 listItem[2] = listItem[4]
         notebook1.set_current_page(0)
@@ -129,7 +129,7 @@ class VendingMachineGTK:
         return cost
 
     def initCheckoutView(self):
-        print (self.itemsListStore)
+        #print (self.itemsListStore)
         
         checkoutView = self.builder.get_object("checkoutView")
         self.currentCostLabel2 = self.builder.get_object("current_cost_label2")
@@ -138,7 +138,7 @@ class VendingMachineGTK:
         for listItem in self.itemsListStore:
             if listItem[3] != 0:
             #print (listItem[0],listItem[1],listItem[2],listItem[3])
-                print ('Item:', listItem[0], 'PPU:', listItem[1], 'Quantity:', listItem[3])
+                #print ('Item:', listItem[0], 'PPU:', listItem[1], 'Quantity:', listItem[3])
                 outputString = 'Item:\t', str(listItem[0]), '\t PPU:\t', str(listItem[1]), '\tQuantity:\t', str(listItem[3])
                 finalString = finalString + ''.join( outputString )
                 finalString = finalString + ''.join('\n') 
