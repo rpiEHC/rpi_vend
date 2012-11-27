@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # cli.py
 # The command line interface for all vending machine operations.
 # This program is designed to run on a Raspberry Pi (RPi) under Linux.
@@ -58,21 +60,6 @@ class Store(object):
 		self.cur.execute(query)
 		self.con.commit()
 
-	# Return all Item() rows in the database
-	@staticmethod
-	def listItems(self):
-		templist = []
-		query = '''SELECT * FROM items'''
-		self.cur.execute(query)
-		result = self.cur.fetchall()
-		if result:
-			print "Items Found"
-			for row in result:
-				x = Item(0)
-				x.info['row'] = row
-				templist.append(x)
-		return templist
-
 
 class Item(Store):
 	'''
@@ -118,6 +105,21 @@ class Item(Store):
 		else:
 			print 'Found no Item with loc==' + str(self.info['loc'])
 			return None
+
+	# Return all Item() rows in the database
+	@staticmethod
+	def listItems(self):
+		templist = []
+		query = '''SELECT * FROM items'''
+		self.cur.execute(query)
+		result = self.cur.fetchall()
+		if result:
+			print "Items Found"
+			for row in result:
+				x = Item(0)
+				x.info['row'] = row
+				templist.append(x)
+		return templist
 
 	# Reduce the quantity of an item remaining, else return error
 	def dispense(self, qty):
@@ -267,18 +269,45 @@ class Hardware(object):
 	'''
 
 	# Hardware Info
-	#import RPi.GPIO as GPIO	# this can only be run on a RPi
-	pin = None
+	#import RPi.GPIO as GPIO	# this can only be run on a RPi and as root
+	pin  = None						# Pin number of this device
+	mode = 1#GPIO.OUT					# Input/Output config
+	cur  = None						# Current value
 
 	# Initialize the one pin for this device.
 	def __init__(self, loc, pin, mode='out'):
 		self.pin = pin
 		if mode=='in':
-			mode=='GPIO.IN'
+			self.mode==0#GPIO.IN
 		else:
-			mode='GPIO.OUT'
-		#GPIO.setup(12, mode)	# config pin mode
+			self.mode==1#GPIO.OUT
+		#GPIO.setup(self.pin, self.mode)  # config pin mode
 		return
+
+	# Return the input value on this pin
+	def getValue(self):
+		if self.mode != 0:#GPIO.IN:
+			return None
+		#cur = GPIO.input(self.pin)
+		return cur
+
+	# Toggle the output signal on this pin (HIGH or LOW)
+	def toggle(self):
+		if self.mode!=1:#GPIO.OUT:
+			return None
+		if cur==1:#GPIO.HIGH:
+			cur = 0#GPIO.LOW
+		else:
+			cur = 1#GPIO.HIGH
+		#GPIO.output( self.pin, cur )
+		return cur
+
+	# For debugging only (the finished program doesn't need this)
+	def clear(self):
+		print "  "+self+".clear() called"
+		#GPIO.cleanup()
+		return
+
 
 
 class Dispenser(object):
@@ -290,7 +319,7 @@ class Dispenser(object):
 	'''
 
 	# Initialize relational info and (physical) child objects
-	loc = 0						# Shelf number of physical dispenser
+	loc 	= 0					# Shelf number of physical dispenser
 	hw_feed = None				# Feed servo which advances the SMD tape
 	hw_cut  = None				# Cutting mechanism
 	hw_lock = None				# Lock/Unlock of Drop Tray
