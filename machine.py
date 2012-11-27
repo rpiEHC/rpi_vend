@@ -12,6 +12,7 @@ import time
 class Store(object):
 	'''
 	Base class for Objects comprising the virtual store inside the machine.
+	Note that the RPi rev 2.0 has 512MB of RAM and stores only on an SD card.
 	'''
 
 	# Database objects
@@ -64,18 +65,30 @@ class Item(Store):
 	vend.
 	'''
 
+	dispenser	= None					# Physical dispenser associated w/ Item
+	info		= {						# Dict of table contents
+		'id'			: 0,
+		'loc'			: 0,
+		'cost'			: 0.0,
+		'qty'			: 0,
+		'name'			: "uninitialized",
+		'long_name'		: "uninitialized",
+		'desc'			: "uninitialized"
+	}
+
 	# Initialize the member vars for this Item
 	def __init__(self, loc,
-	             cost=0.00, qty=0, name=None, long_name=None, desc=None):
+	             cost=None, qty=None, name=None, long_name=None, desc=None):
 		self.info = {
-			'id'	: None,
-			'loc'   : loc,				# shelf number item is located on
-			'cost'  : cost,				# cost per unit
-			'qty'	: qty,				# quantity in stock for this item
-			'name'  : name,				# display name of item (optional)
-			'long_name' : long_name,	# full name of item (optional)
-			'desc'  : desc				# 72 words recommended (optional)
+			'id'		: None,			# table auto index
+			'loc'		: loc,			# shelf number item is located on
+			'cost'		: cost,			# cost per unit
+			'qty'		: qty,			# quantity in stock for this item
+			'name'		: name,			# display name of item (optional)
+			'long_name'	: long_name,	# full name of item (optional)
+			'desc'		: desc			# 72 words recommended (optional)
 		}
+		self.dispenser = Dispenser(loc)
 
 	# Search the table (by loc) for a given Item
 	def find(self):
@@ -108,19 +121,28 @@ class Item(Store):
 
 	# Reduce the quantity of an item remaining, else return error
 	def dispense(self, qty):
+		# Fetch the result and store the zeroth item in the result tuple
+		# (which has a size of one) in the (already configured) member var
 		query = '''SELECT qty FROM items WHERE loc==? LIMIT 1'''
 		self.cur.execute(query,[self.info['loc']])
-		result = self.cur.fetchone()
-		if result[0] >= qty:
-			self.info['qty'] = result[0] - qty
-			print 'Saving that QTY is '+str(result[0])+'-->'+str(self.info['qty'])
-			query = '''UPDATE items SET qty=? WHERE loc=?'''
-			self.cur.execute(query,[self.info['qty'],self.info['loc']])
-			self.con.commit()
+		self.info['qty'] = self.cur.fetchone()[0]
+		if self.info['qty'] >= qty:
+			new_qty = self.info['qty'] - qty
+			self.update(new_qty)
+			self.dispenser.dispense(qty)
 			return
 		else:
-			print 'Impossible to vend '+str(qty)+' Items (because only '+str(result[0])+' remain) !'
+			print 'Impossible to vend '+str(qty)+' Items (because only '+str(self.info['qty'])+' remain) !'
 			return None
+
+	# Store a new Item in the table
+	def update(self, new_qty):
+		print 'Saving QTY change: '+str(self.info['qty'])+' --> '+str(new_qty)
+		self.info['qty'] = new_qty
+		query = '''UPDATE items SET qty=? WHERE loc=?'''
+		self.cur.execute(query,[new_qty,self.info['loc']])
+		self.con.commit()
+		return
 
 	# Store a new Item in the table
 	def save(self):
@@ -132,6 +154,7 @@ class Item(Store):
 		self.cur.execute(query,values)
 		self.con.commit()
 		print 'Saved Item('+str(self.info['loc'])+','+self.info['name']+')'
+		return
 
 
 class User(Store):
@@ -247,7 +270,7 @@ class Hardware(object):
 	#import RPi.GPIO as GPIO	# this can only be run on a RPi
 	pin = None
 
-	# Initialize
+	# Initialize the one pin for this device.
 	def __init__(self, loc, pin, mode='out'):
 		self.pin = pin
 		if mode=='in':
@@ -266,29 +289,35 @@ class Dispenser(object):
 	(TODO-- MUX dispensers so that more can be installed)
 	'''
 
-	# Info
+	# Initialize relational info and (physical) child objects
 	loc = 0						# Shelf number of physical dispenser
-	contents = Item(loc)		# Item contained in dispenser
+	hw_feed = None				# Feed servo which advances the SMD tape
+	hw_cut  = None				# Cutting mechanism
+	hw_lock = None				# Lock/Unlock of Drop Tray
+	hw_led0 = None				# Indicator LED on this shelf
 
-	# Connect Store Item, Hardware pins to Dispenser
+	# Connect Store.Item() and Hardware() pins to this Dispenser().
+	# Initialize IO using provided loc to determine number and order of pins
+	# and provided starting pin number to determing which GPIO to init.
 	def __init__(self, loc):
 		self.loc = loc
-		self.contents = Item(loc)
-		self.contents.find()
-		# todo: init IO pins
+		self.hw_feed = Hardware(loc  ,0)
+		self.hw_cut  = Hardware(loc+1,0)
+		self.hw_lock = Hardware(loc+2,0)
+		self.hw_led0 = Hardware(loc+3,0)
 		return
 
-	# Dispense a quantity of Items from the machine, if possible
+	# Dispense a quantity of Items from the machine, if possible.
+	# This function is called last when vending an Item().
 	def dispense(self, qty=1):
-		if self.contents.dispense(qty)==None:
-			return None
+		print 'Dispensing '+str(qty)+' Item(s)...'
 		# todo: advance a qty of items, cut, unlock drawer, then indicate.
 		return
 
 
 def test_db():
 	'''
-	This simple test loads example data
+	This simple test loads example Store data
 	'''
 	print '  -- TESTING DB --'
 	mach = Store()
@@ -306,7 +335,7 @@ def test_db():
 
 def test_purchase():
 	'''
-	Using example data, verify and vend a Purchase
+	Using example data, verify and vend a Purchase in the Store and Dispenser
 	'''
 	print '  -- TESTING PURCHASE --'
 	mach2 = Store()
