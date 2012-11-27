@@ -80,15 +80,16 @@ class Item(Store):
         'loc'           : 0,
         'cost'          : 0.0,
         'qty'           : 0,
-        'name'          : "uninitialized",
-        'long_name'     : "uninitialized",
-        'desc'          : "uninitialized",
+        'name'          : None,
+        'long_name'     : None,
+        'desc'          : None,
     }
 
-    def __init__(self, loc,
-                 cost=None, qty=None, name=None, long_name=None, desc=None):
+    def __init__(self, loc, cost=0, qty=0, name='', long_name='', desc=''):
         '''
-        Initialize the member vars for this Item
+        Initialize the member vars for this Item. The default values are
+        included to allow the initialization of empty/dummy objects, but all
+        members are populated upon pull from db.
         '''
         self.info = {
             'id'        : None,         # table auto index
@@ -102,9 +103,9 @@ class Item(Store):
         self.dispenser = Dispenser(loc)
 
     def find(self):
-    '''
-    Search the table (by loc) for a given Item
-    '''
+        '''
+        Search the table (by loc) for a given Item
+        '''
         query = '''SELECT * FROM items WHERE loc==? LIMIT 1'''
         self.cur.execute(query,[self.info['loc']])
         result = self.cur.fetchone()
@@ -149,7 +150,8 @@ class Item(Store):
             self.dispenser.dispense(qty)
             return
         else:
-            print 'Impossible to vend '+str(qty)+' Items (because only '+str(self.info['qty'])+' remain) !'
+            print ('Impossible to vend '+str(qty)+' Items (because only '+
+                str(self.info['qty'])+' remain) !')
             return None
 
     def update(self, new_qty):
@@ -248,8 +250,8 @@ class Purchase(Store):
     def addToCart(self, loc, qty):
         '''
         Add a single entry to the cart by providing the loc,qty of an Item.
-        Don't bother checking if there's enough qty in stock because that's done
-        by the GUI and before vending.
+        Don't bother checking if there's enough qty in stock because that's
+        done by the GUI and before vending.
         '''
         entry = Item(loc)
         if not entry.find():
@@ -258,7 +260,8 @@ class Purchase(Store):
 
     def compute_total(self):
         '''
-        Compute the total dollar amount of the purchase, given the cart
+        Compute the total dollar amount of the purchase, given the cart as a
+        list of tuples.
         '''
         for x in self.info['cart']:             # Iterate through the cart object which is a list of items
             query = '''SELECT qty FROM items WHERE loc==? LIMIT 1'''        # Searches for the item in the database using the location
@@ -273,7 +276,7 @@ class Purchase(Store):
         query = '''
             INSERT OR IGNORE INTO purchases(date,uid,total,cart)
             values(strftime('%s','now'),?,?,?)'''
-        blob = unicode(self.info['cart'])       # todo: store this properly (pickle?)
+        blob = unicode(self.info['cart'])  # todo: store this properly (pickle?)
         values = (self.info['uid'],self.info['total'],blob)
         self.cur.execute(query,values)
         self.con.commit()
@@ -282,9 +285,9 @@ class Purchase(Store):
 
     def vend(self):
         '''
-        Handle the Vend: Dispense an Item from the correlated Dispenser and then
-        charge the User the total amount. This function should not be called
-        unless the requested Items have enouch quantity in stock.
+        Handle the Vend: Dispense an Item from the correlated Dispenser and
+        then charge the User the total amount. This function should not be
+        called unless the requested Items have enough quantity in stock.
         '''
 
         # Is the user a club member?
@@ -308,10 +311,10 @@ class Purchase(Store):
 
 class Hardware(object):
     '''
-    Objects interfacing the physical vending mahcine.
-    Note that python is an interpreted language and a poor choice for
-    real-time applications. It's still good enough here.
-    This is the only class that should interface directly with GPIO.
+    Objects interfacing the physical vending machine. Note that python is an
+    interpreted language and a poor choice for real-time applications.
+    It's still good enough here.
+    Also, this is the only class that should interface directly with GPIO.
     See <http://code.google.com/p/raspberry-gpio-python/> for RPi.GPIO usage.
     '''
 
@@ -374,17 +377,17 @@ class Dispenser(object):
     '''
 
     # Initialize relational info and (physical) child objects
-    loc     = 0                 # Shelf number of physical dispenser
-    hw_feed = None              # Feed servo which advances the SMD tape
-    hw_cut  = None              # Cutting mechanism
-    hw_lock = None              # Lock/Unlock of Drop Tray
-    hw_led0 = None              # Indicator LED on this shelf
+    loc     = 0                         # Shelf number of physical dispenser
+    hw_feed = None                      # Feed servo which advances the tape
+    hw_cut  = None                      # Cutting mechanism
+    hw_lock = None                      # Lock/Unlock of Drop Tray
+    hw_led0 = None                      # Indicator LED on this shelf
 
     def __init__(self, loc):
         '''
         Connect Store.Item() and Hardware() pins to this Dispenser().
         Initialize IO using provided loc to determine number and order of pins
-        and provided starting pin number to determing which GPIO to init.
+        and provided starting pin number to determine which GPIO to init.
         '''
         self.loc = loc
         self.hw_feed = Hardware(loc  ,0)
