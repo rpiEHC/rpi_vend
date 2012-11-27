@@ -195,8 +195,8 @@ class Purchase(Store):
 
 	# Compute the total dollar amount of the purchase, given the cart
 	def compute_total(self):
-		for x in self.info['cart']:				# Iterate through the cart object
-			self.info['total']+=x.info['cost']*x.info['qty']		# Add the 
+		for x in self.info['cart']:				# Iterate through the cart object which is a list of items
+			self.info['total']+=x.info['cost']*x.info['qty']		# Add the current item cost times the qty
 		return self.info['total']
 
 	# Commit the Purchase to the table
