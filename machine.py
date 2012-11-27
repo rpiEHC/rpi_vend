@@ -101,6 +101,8 @@ class Item(Store):
             'desc'      : desc          # 72 words recommended (optional)
         }
         self.dispenser = Dispenser(loc)
+        self.find()
+        return
 
     def find(self):
         '''
@@ -242,32 +244,35 @@ class Purchase(Store):
             'date'  : None,             # datetime of transaction
             'uid'   : uid,              # ISO of User
             'total' : 0.00,             # Computed total transaction
-            'cart'  : cart              # List of each [loc,qty] to purchase
+            'cart'  : [cart],           # List of each (loc,qty) to purchase
         }
         self.user = User(uid)
         return
 
     def addToCart(self, loc, qty):
         '''
-        Add a single entry to the cart by providing the loc,qty of an Item.
+        Add a single entry to the cart by providing the (loc,qty) of an Item.
         Don't bother checking if there's enough qty in stock because that's
         done by the GUI and before vending.
         '''
         entry = Item(loc)
         if not entry.find():
             return None
-        return self.info['cart'].append((loc,qty))
+        return self.info['cart'].append((int(loc),int(qty)))
 
     def compute_total(self):
         '''
         Compute the total dollar amount of the purchase, given the cart as a
         list of tuples.
         '''
-        for x in self.info['cart']:             # Iterate through the cart object which is a list of items
-            query = '''SELECT qty FROM items WHERE loc==? LIMIT 1'''        # Searches for the item in the database using the location
-            result=self.cur.execute(query,x['loc'])                 # Stores the result. There should be only one item at that location
-            self.info['total']+=result[0]*x['qty']                  # Takes the cost (I think it's located in element 0 of results and multiply it by the quanitity. This gets added to the total
-        return self.info['total']                           # Returns the total
+        self.info['total'] = 0
+        for entry in self.info['cart']:
+            loc = entry[0]
+            qty = entry[1]
+            entry = Item(loc)
+            cost = entry.info['cost']
+            self.info['total'] += qty*cost
+        return self.info['total']
 
     def save(self):
         '''
@@ -297,8 +302,10 @@ class Purchase(Store):
             return None
 
         # Dispense the requested quantity of each Item
-        for key,value in self.info['cart'].items():
-            key.dispense(value)
+        for entry in self.info['cart']:
+            loc = entry[0]
+            qty = entry[1]
+            Item(loc).dispense(qty)
 
         # Charge the Purchase to the verified User
         total = self.compute_total()
@@ -365,7 +372,6 @@ class Hardware(object):
         print "  "+self+".clear() called"
         #GPIO.cleanup()
         return
-
 
 
 class Dispenser(object):
@@ -437,7 +443,7 @@ def test_purchase():
     it.save()
     disp = Dispenser(1)
     us = User(123456789)
-    cart = { Item(1) : 1 }
+    cart = (1,1)
     purch = Purchase(us.uid,cart)
     purch.vend()
     print '  -- DONE --'
