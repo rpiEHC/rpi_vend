@@ -37,17 +37,34 @@ class VendingMachineGTK:
             "on_page2_fwd_clicked" : self.page2FwdClicked,
             "on_page2_back_clicked" : self.page2BackClicked,
             "on_page3_back_clicked" : self.page3BackClicked,
-            "on_page3_quit_clicked" : self.quit,
             "on_MainWindow_destroy" : self.quit,
             "on_increment_button_clicked" : self.incrementButtonClicked,
             "on_decrement_button_clicked" : self.decrementButtonClicked,
-            "on_quit_button_clicked" : self.quitButtonClicked
+            "on_quit_button_clicked" : self.quitButtonClicked,
+            "on_page3_quit_clicked" : self.purchaseClicked,
+            "on_purchase_button_clicked" : self.purchaseClicked
             
         }
         self.builder.connect_signals(dic)
 
         # We just init on app licaiton start - and maybe when the user wants to totally empty the cart
         self.initItemsView()
+
+    def purchaseClicked(self, widget):
+        notebook1 = self.builder.get_object("notebook1")
+        #notebook1.set_current_page(0)
+        cart = []
+        for listItem in self.itemsListStore:
+            #print listItem
+            if listItem[3] != 0:
+                print ("loc:", listItem[5], "quantity:", listItem[3])
+                tempTuple = (listItem[5],listItem[3])
+                #print tempTuple
+                cart.append(tempTuple)
+        #print cart
+        machine.Purchase.vend(cart)
+        notebook1.set_current_page(0)        
+                
 
     def incrementButtonClicked(self, widget):
         treeView = self.builder.get_object("items_tree_view")
@@ -153,9 +170,11 @@ class VendingMachineGTK:
         
         
         self.store = machine.Store()
-        items = machine.Store.listItems(self.store);
+        items = machine.Item.listItems(self.store);
         
         for item in items:
+            print item.info.values()
+            
             itemValues = item.info.values()
             itemInfo = itemValues[5]
             itemLoc = itemInfo[0]
@@ -164,7 +183,7 @@ class VendingMachineGTK:
             itemName = itemInfo[3]
             itemLongName = itemInfo[4]
             itemDesc = itemInfo[5]
-            self.itemsListStore.append([itemName, itemCost, itemQty, 0, itemQty])
+            self.itemsListStore.append([itemName, itemCost, itemQty, 0, itemQty, itemLoc])
             
         #self.store.con.close()
         
