@@ -465,13 +465,13 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="page3_purchase">
+                              <object class="GtkButton" id="purchase_button">
                                 <property name="label" translatable="yes">Confirm Purchase</property>
                                 <property name="use_action_appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
-                                <signal name="clicked" handler="on_page3_quit_clicked" swapped="no"/>
+                                <signal name="clicked" handler="on_purchase_button_clicked" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -533,6 +533,8 @@
       <!-- column-name Quantity -->
       <column type="gint"/>
       <!-- column-name Inventory -->
+      <column type="gint"/>
+      <!-- column-name Loc -->
       <column type="gint"/>
     </columns>
   </object>
