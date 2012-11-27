@@ -22,7 +22,7 @@ Assuming that all requirements are installed, you can run python code from the c
   - <torrez@rpi.edu>
   - Rensselaer Polytechnic Institute Class of 2012
   - GitHub: [zacharyTorre](https://github.com/ZacharyTorre)
- * David Herbert
+* David Herbert
   - <herbed@rpi.edu>
   - Rensselaer Polytechnic Institute Class of 2013
   - GitHub: [daitomodachi](https://github.com/daitomodachi)
