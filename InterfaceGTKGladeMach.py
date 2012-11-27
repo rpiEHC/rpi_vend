@@ -62,7 +62,8 @@ class VendingMachineGTK:
                 #print tempTuple
                 cart.append(tempTuple)
         #print cart
-        machine.Purchase.vend(cart)
+        entry = Purchase(999999999. cart)        
+        entry.vend()
         notebook1.set_current_page(0)        
                 
 
