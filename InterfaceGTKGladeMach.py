@@ -12,7 +12,7 @@ try:
 except:
     sys.exit(1)
 try:
-    import cli
+    import machine
 except:
     sys.exit(1)
 
@@ -126,13 +126,13 @@ class VendingMachineGTK:
                 finalString = finalString + ''.join('\n') 
         checkoutView.get_buffer().set_text(finalString)
 
-    def initItemsView(self):
+    #def initItemsView(self):
         #notebook1 = self.builder.get_object("notebook1")
         #self.itemsTreeView = self.builder.get_object("items_tree_view")
         
-        item1 = cli.Item(10, 5.00, 100, 'test10', 'long name', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam porttitor faucibus tempus. Nullam neque leo, ultricies sit amet rutrum quis, interdum et metus. In ac risus sapien, sed vestibulum felis. Maecenas luctus semper rutrum. In eget adipiscing mauris. Pellentesque ultricies mattis nunc eu luctus. In eget nisi neque. Ut sit amet dapibus mauris. Donec vel nulla nunc, non lacinia lacus. Pellentesque ac sapien lacinia arcu cursus dignissim. Suspendisse ut sapien sit amet.')
-        item2 = cli.Item(11, 4.00, 34, 'test11', 'long name', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam porttitor faucibus tempus. Nullam neque leo, ultricies sit amet rutrum quis, interdum et metus. In ac risus sapien, sed vestibulum felis. Maecenas luctus semper rutrum. In eget adipiscing mauris. Pellentesque ultricies mattis nunc eu luctus. In eget nisi neque. Ut sit amet dapibus mauris. Donec vel nulla nunc, non lacinia lacus. Pellentesque ac sapien lacinia arcu cursus dignissim. Suspendisse ut sapien sit amet.')
-        item3 = cli.Item(12, 2.00, 66, 'test12', 'long name', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam porttitor faucibus tempus. Nullam neque leo, ultricies sit amet rutrum quis, interdum et metus. In ac risus sapien, sed vestibulum felis. Maecenas luctus semper rutrum. In eget adipiscing mauris. Pellentesque ultricies mattis nunc eu luctus. In eget nisi neque. Ut sit amet dapibus mauris. Donec vel nulla nunc, non lacinia lacus. Pellentesque ac sapien lacinia arcu cursus dignissim. Suspendisse ut sapien sit amet.')
+        #item1 = machine.Item(10, 5.00, 100, 'test10', 'long name', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam porttitor faucibus tempus. Nullam neque leo, ultricies sit amet rutrum quis, interdum et metus. In ac risus sapien, sed vestibulum felis. Maecenas luctus semper rutrum. In eget adipiscing mauris. Pellentesque ultricies mattis nunc eu luctus. In eget nisi neque. Ut sit amet dapibus mauris. Donec vel nulla nunc, non lacinia lacus. Pellentesque ac sapien lacinia arcu cursus dignissim. Suspendisse ut sapien sit amet.')
+        #item2 = machine.Item(11, 4.00, 34, 'test11', 'long name', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam porttitor faucibus tempus. Nullam neque leo, ultricies sit amet rutrum quis, interdum et metus. In ac risus sapien, sed vestibulum felis. Maecenas luctus semper rutrum. In eget adipiscing mauris. Pellentesque ultricies mattis nunc eu luctus. In eget nisi neque. Ut sit amet dapibus mauris. Donec vel nulla nunc, non lacinia lacus. Pellentesque ac sapien lacinia arcu cursus dignissim. Suspendisse ut sapien sit amet.')
+        #item3 = machine.Item(12, 2.00, 66, 'test12', 'long name', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam porttitor faucibus tempus. Nullam neque leo, ultricies sit amet rutrum quis, interdum et metus. In ac risus sapien, sed vestibulum felis. Maecenas luctus semper rutrum. In eget adipiscing mauris. Pellentesque ultricies mattis nunc eu luctus. In eget nisi neque. Ut sit amet dapibus mauris. Donec vel nulla nunc, non lacinia lacus. Pellentesque ac sapien lacinia arcu cursus dignissim. Suspendisse ut sapien sit amet.')
 
         #
         # For each item we set
@@ -141,34 +141,32 @@ class VendingMachineGTK:
         # As items are set to be purchased - available count + quantity to purchase = inventory amount
         # inventory ampount is for processing convenience and not displayed in a column
         #
+        #self.itemsListStore = self.builder.get_object("items_list_store")
+        
+        #self.itemsListStore.append([item1.info['name'], item1.info['cost'], item1.info['qty'], 0, item1.info['qty']])
+        #self.itemsListStore.append([item2.info['name'], item2.info['cost'], item2.info['qty'], 0, item2.info['qty']])
+        #self.itemsListStore.append([item3.info['name'], item3.info['cost'], item3.info['qty'], 0, item3.info['qty']])
+
+    def initItemsView(self):
+        self.itemsTreeView = self.builder.get_object("items_tree_view")
         self.itemsListStore = self.builder.get_object("items_list_store")
         
-        self.itemsListStore.append([item1.info['name'], item1.info['cost'], item1.info['qty'], 0, item1.info['qty']])
-        self.itemsListStore.append([item2.info['name'], item2.info['cost'], item2.info['qty'], 0, item2.info['qty']])
-        self.itemsListStore.append([item3.info['name'], item3.info['cost'], item3.info['qty'], 0, item3.info['qty']])
-
-##    def initItemsView(self):
-##        self.itemsTreeView = self.builder.get_object("items_tree_view")
-##        self.itemsListStore = self.builder.get_object("items_list_store")
-##        self.itemsListStore.append([0,"zero"])
-##        self.itemsListStore.append([1,"one"])
-##        self.itemsListStore.append([2,"two"])
         
-##        self.store = cli.Store()
-##        items = cli.Item.listItems(self.store);
-##        
-##        for item in items:
-##            itemValues = item.info.values()
-##            itemInfo = itemValues[5]
-##            itemLoc = itemInfo[0]
-##            itemCost = itemInfo[1]
-##            itemQty = itemInfo[2]
-##            itemName = itemInfo[3]
-##            itemLongName = itemInfo[4]
-##            itemDesc = itemInfo[5]
-##            itemsListStore.append([itemName,itemQty,0,0])
-##            
-##        self.store.con.close()
+        self.store = machine.Store()
+        items = machine.Store.listItems(self.store);
+        
+        for item in items:
+            itemValues = item.info.values()
+            itemInfo = itemValues[5]
+            itemLoc = itemInfo[0]
+            itemCost = itemInfo[1]
+            itemQty = itemInfo[2]
+            itemName = itemInfo[3]
+            itemLongName = itemInfo[4]
+            itemDesc = itemInfo[5]
+            self.itemsListStore.append([itemName, itemCost, itemQty, 0, itemQty])
+            
+        #self.store.con.close()
         
 		
 
