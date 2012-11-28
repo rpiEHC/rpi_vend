@@ -67,6 +67,23 @@ class Store(object):
         self.cur.execute(query)
         self.con.commit()
 
+    @staticmethod
+    def listItems(self):
+        '''
+        Return all Item() rows in the database
+        '''
+        templist = []
+        query = '''SELECT * FROM items'''
+        self.cur.execute(query)
+        result = self.cur.fetchall()
+        if result:
+            print "Items Found"
+            for row in result:
+                x = Item(0)
+                x.info['row'] = row
+                templist.append(x)
+        return templist
+
 
 class Item(Store):
     '''
@@ -101,10 +118,10 @@ class Item(Store):
             'desc'      : desc,         # 72 words recommended (optional)
         }
         self.dispenser = Dispenser(loc)
-        self.find()
+        self._find()
         return
 
-    def find(self):
+    def _find(self):
         '''
         Search the table (by loc) for a given Item
         '''
@@ -120,45 +137,28 @@ class Item(Store):
             print 'Found no Item with loc==' + str(self.info['loc'])
             return None
 
-    @staticmethod
-    def listItems(self):
-        '''
-        Return all Item() rows in the database
-        '''
-        templist = []
-        query = '''SELECT * FROM items'''
-        self.cur.execute(query)
-        result = self.cur.fetchall()
-        if result:
-            print "Items Found"
-            for row in result:
-                x = Item(0)
-                x.info['row'] = row
-                templist.append(x)
-        return templist
-
-    def dispense(self, qty):
+    def _dispense(self, qty):
         '''
         Reduce the quantity of an item remaining, else return an error.
         Fetch the result and store the zeroth item in the result tuple
-        (which has a size of one) in the (already configured) member var
+        (which has a size of one) in the (already configured) member var.
         '''
         query = '''SELECT qty FROM items WHERE loc==? LIMIT 1'''
         self.cur.execute(query,[self.info['loc']])
         self.info['qty'] = self.cur.fetchone()[0]
         if self.info['qty'] >= qty:
             new_qty = self.info['qty'] - qty
-            self.update(new_qty)
-            self.dispenser.dispense(qty)
+            self._update(new_qty)
+            self.dispenser._dispense(qty)
             return
         else:
             print ('Impossible to vend '+str(qty)+' Items (because only '+
                 str(self.info['qty'])+' remain) !')
             return None
 
-    def update(self, new_qty):
+    def _update(self, new_qty):
         '''
-        Store a new Item in the table
+        Store a new Item in the table.
         '''
         print 'Saving QTY change: '+str(self.info['qty'])+' --> '+str(new_qty)
         self.info['qty'] = new_qty
@@ -169,7 +169,8 @@ class Item(Store):
 
     def save(self):
         '''
-        Store a new Item in the table
+        Store a new Item in the table.
+        This is used for debugging.
         '''
         query = '''
             INSERT OR IGNORE INTO items(loc,cost,qty,name,long_name,desc)
@@ -179,6 +180,47 @@ class Item(Store):
         self.cur.execute(query,values)
         self.con.commit()
         print 'Saved Item('+str(self.info['loc'])+','+self.info['name']+')'
+        return
+
+
+class Dispenser(object):
+    '''
+    A dispenser on a given shelf location. Each dispenser has a feed motor,
+    a cutting mechanism, a drawer lock, and indicators. Dispensers contain
+    GPIO components that are installed on consecutive pins.
+    (TODO-- MUX dispensers so that more can be installed)
+    '''
+
+    # Initialize relational info and (physical) child objects
+    loc     = 0                         # Shelf number of physical dispenser
+    hw_feed = None                      # Feed servo which advances the tape
+    hw_cut  = None                      # Cutting mechanism
+    hw_lock = None                      # Lock/Unlock of Drop Tray
+    hw_led0 = None                      # Indicator LED on this shelf
+
+    def __init__(self, loc):
+        '''
+        Connect Store.Item() and Hardware() pins to this Dispenser().
+        Initialize IO using provided loc to determine number and order of pins
+        and provided starting pin number to determine which GPIO to init.
+        '''
+        self.loc     = loc
+        self.hw_feed = Hardware(loc  ,0)
+        self.hw_cut  = Hardware(loc+1,0)
+        self.hw_lock = Hardware(loc+2,0)
+        self.hw_led0 = Hardware(loc+3,0)
+        return
+
+    def _dispense(self, qty=1):
+        '''
+        Dispense a quantity of Items from the machine, if possible.
+        This function is called last when vending an Item().
+        '''
+        print 'Dispensing '+str(qty)+' Item(s)...'
+        # todo: advance a qty of items
+        # todo: cut tape
+        # todo: unlock drawer
+        # todo: indicate.
         return
 
 
@@ -221,7 +263,7 @@ class User(Store):
             return None
         return
 
-    def charge(self, amount):
+    def _charge(self, amount):
         '''
         Charge a given amount to the User's tab
         '''
@@ -230,7 +272,7 @@ class User(Store):
         self.con.commit()
         return
 
-    def save(self):
+    def _save(self):
         '''
         Store a new User in the table
         '''
@@ -275,7 +317,7 @@ class Purchase(Store):
             return None
         return self.info['cart'].append((int(loc),int(qty)))
 
-    def compute_total(self):
+    def _compute_total(self):
         '''
         Compute the total dollar amount of the purchase, given the cart as a
         list of tuples.
@@ -289,14 +331,14 @@ class Purchase(Store):
             self.info['total'] += qty*cost
         return self.info['total']
 
-    def save(self):
+    def _save(self):
         '''
         Commit the Purchase to the table
         '''
         query = '''
             INSERT OR IGNORE INTO purchases(date,uid,total,cart)
             values(strftime('%s','now'),?,?,?)'''
-        blob = unicode(self.info['cart'])  # todo: store this properly (pickle?)
+        blob = unicode(self.info['cart'])
         values = (self.info['uid'],self.info['total'],blob)
         self.cur.execute(query,values)
         self.con.commit()
@@ -320,14 +362,14 @@ class Purchase(Store):
         for entry in self.info['cart']:
             loc = entry[0]
             qty = entry[1]
-            Item(loc).dispense(qty)
+            Item(loc)._dispense(qty)
 
         # Charge the Purchase to the verified User
-        total = self.compute_total()
-        self.user.charge(total)
+        total = self._compute_total()
+        self.user._charge(total)
 
         # Log the purchase. That's it!
-        self.save()
+        self._save()
         return
 
 
@@ -389,48 +431,6 @@ class Hardware(object):
         return
 
 
-class Dispenser(object):
-    '''
-    A dispenser on a given shelf location. Each dispenser has a feed motor,
-    a cutting mechanism, a drawer lock, and indicators. Dispensers contain
-    GPIO components that are installed on consecutive pins.
-    (TODO-- MUX dispensers so that more can be installed)
-    '''
-
-    # Initialize relational info and (physical) child objects
-    loc     = 0                         # Shelf number of physical dispenser
-    hw_feed = None                      # Feed servo which advances the tape
-    hw_cut  = None                      # Cutting mechanism
-    hw_lock = None                      # Lock/Unlock of Drop Tray
-    hw_led0 = None                      # Indicator LED on this shelf
-
-    def __init__(self, loc):
-        '''
-        Connect Store.Item() and Hardware() pins to this Dispenser().
-        Initialize IO using provided loc to determine number and order of pins
-        and provided starting pin number to determine which GPIO to init.
-        '''
-        self.loc = loc
-        print 'loc ' , loc, ' ', type(loc)
-        self.hw_feed = Hardware(loc  ,0)
-        self.hw_cut  = Hardware(loc+1,0)
-        self.hw_lock = Hardware(loc+2,0)
-        self.hw_led0 = Hardware(loc+3,0)
-        return
-
-    def dispense(self, qty=1):
-        '''
-        Dispense a quantity of Items from the machine, if possible.
-        This function is called last when vending an Item().
-        '''
-        print 'Dispensing '+str(qty)+' Item(s)...'
-        # todo: advance a qty of items
-        # todo: cut tape
-        # todo: unlock drawer
-        # todo: indicate.
-        return
-
-
 def test_db():
     '''
     This simple test loads example Store data
@@ -441,10 +441,9 @@ def test_db():
     it = Item(1, 5.00, 99, 'test')
     it.save()
     it2 = Item(1)
-    it2.find()
+    it2._find()
     us = User(0)
     purch = Purchase(us.uid,None)
-    purch.save()
     print '  -- DONE --'
     return
 
@@ -465,5 +464,5 @@ def test_purchase():
     print '  -- DONE --'
 
 
-#test_db()
-#test_purchase()
+test_db()
+test_purchase()
