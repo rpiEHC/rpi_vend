@@ -292,7 +292,7 @@ class Purchase(Store):
     Items to a user that already paid.
     '''
 
-    def __init__(self, uid, cart):
+    def __init__(self, uid):
         '''
         Initialize member vars
         '''
@@ -301,19 +301,19 @@ class Purchase(Store):
             'date'  : None,             # datetime of transaction
             'uid'   : uid,              # ISO of User
             'total' : 0.00,             # Computed total transaction
-            'cart'  : [cart],           # List of each (loc,qty) to purchase
+            'cart'  : [],               # List of each (loc,qty) to purchase
         }
         self.user = User(uid)
         return
 
-    def addToCart(self, loc, qty):
+    def add_to_cart(self, loc, qty):
         '''
         Add a single entry to the cart by providing the (loc,qty) of an Item.
         Don't bother checking if there's enough qty in stock because that's
         done by the GUI and before vending.
         '''
         entry = Item(loc)
-        if not entry.find():
+        if not entry._find() or qty < 1:
             return None
         return self.info['cart'].append((int(loc),int(qty)))
 
@@ -359,6 +359,7 @@ class Purchase(Store):
             return None
 
         # Dispense the requested quantity of each Item
+        print self.info['cart']
         for entry in self.info['cart']:
             loc = entry[0]
             qty = entry[1]
@@ -443,7 +444,7 @@ def test_db():
     it2 = Item(1)
     it2._find()
     us = User(0)
-    purch = Purchase(us.uid,None)
+    purch = Purchase(us.uid)
     print '  -- DONE --'
     return
 
@@ -458,8 +459,8 @@ def test_purchase():
     it.save()
     disp = Dispenser(1)
     us = User(123456789)
-    cart = (1,1)
-    purch = Purchase(us.uid,cart)
+    purch = Purchase(us.uid)
+    purch.add_to_cart(1,1)
     purch.vend()
     print '  -- DONE --'
 
