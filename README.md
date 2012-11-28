@@ -12,7 +12,7 @@ Assuming that all requirements are installed, you can run python code from the c
     $ python myfile.py
 
 
-## Project Members
+## Software Team
 
 * Theodore X. Pak
   - <mail@theopak.com>
@@ -29,7 +29,7 @@ Assuming that all requirements are installed, you can run python code from the c
 
 ## License
 
-    Copyright (c) 2012, except as indicated
+    Copyright (c) 2012 RPI Embedded Hardware Club, except as indicated
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
