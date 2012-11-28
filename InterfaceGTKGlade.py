@@ -16,14 +16,15 @@ try:
 except:
     sys.exit(1)
 
+
 class VendingMachineGTK:
 
-    MODEL_NAME = 0
-    MODEL_PRICE = 1
+    MODEL_NAME      = 0
+    MODEL_PRICE     = 1
     MODEL_AVAILABLE = 2
-    MODEL_QUANTITY = 3
+    MODEL_QUANTITY  = 3
     MODEL_INVENTORY = 4
-    MODEL_LOC = 5
+    MODEL_LOC       = 5
 
     def __init__(self):
 
@@ -52,6 +53,12 @@ class VendingMachineGTK:
         self.initItemsView()
 
     def purchaseClicked(self, widget):
+        '''
+        This function is called when the user clicks the 'complete purchase'
+        button. It uses the public methods from machine.py to instantiate a
+        Store.Purchase() object, populate its cart, and then complete all the
+        database, object, and hardware calls associated with vending the items.
+        '''
 
         # Interface magic
         notebook1 = self.builder.get_object("notebook1")
@@ -63,7 +70,8 @@ class VendingMachineGTK:
         # Build the cart
         for list_item in self.itemsListStore:
             if list_item[self.MODEL_QUANTITY]!=0:
-                purch.add_to_cart(list_item[self.MODEL_LOC], list_item[self.MODEL_QUANTITY])
+                purch.add_to_cart(list_item[self.MODEL_LOC],
+                                  list_item[self.MODEL_QUANTITY])
 
         # Vend the Purchase
         purch.vend()
