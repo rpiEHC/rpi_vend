@@ -16,17 +16,18 @@ try:
 except:
     sys.exit(1)
 
+
 class VendingMachineGTK:
 
-    MODEL_NAME = 0
-    MODEL_PRICE = 1
+    MODEL_NAME      = 0
+    MODEL_PRICE     = 1
     MODEL_AVAILABLE = 2
-    MODEL_QUANTITY = 3
+    MODEL_QUANTITY  = 3
     MODEL_INVENTORY = 4
-    MODEL_LOC = 5
+    MODEL_LOC       = 5
 
     def __init__(self):
-		
+
         self.filename = "InterfaceGTKGlade.glade"
         self.builder = gtk.Builder()
         self.builder.add_from_file(self.filename)
@@ -44,7 +45,7 @@ class VendingMachineGTK:
             "on_quit_button_clicked" : self.quitButtonClicked,
             "on_page3_quit_clicked" : self.purchaseClicked,
             "on_purchase_button_clicked" : self.purchaseClicked
-            
+
         }
         self.builder.connect_signals(dic)
 
@@ -52,27 +53,37 @@ class VendingMachineGTK:
         self.initItemsView()
 
     def purchaseClicked(self, widget):
+        '''
+        This function is called when the user clicks the 'complete purchase'
+        button. It uses the public methods from machine.py to instantiate a
+        Store.Purchase() object, populate its cart, and then complete all the
+        database, object, and hardware calls associated with vending the items.
+        '''
+
+        # Interface magic
         notebook1 = self.builder.get_object("notebook1")
         #notebook1.set_current_page(0)
-        cart = []
-        for listItem in self.itemsListStore:
-            #print listItem
-            if listItem[self.MODEL_QUANTITY] != 0:
-                tempTuple = (listItem[self.MODEL_LOC],listItem[self.MODEL_QUANTITY])
-                cart.append(tempTuple)
-                
-        #print cart
-        entry = machine.Purchase(us.uid, cart)        
-        entry.vend()
+
+        # Initialize interface
+        purch = machine.Purchase(us.uid)
+
+        # Build the cart
+        for list_item in self.itemsListStore:
+            if list_item[self.MODEL_QUANTITY]!=0:
+                purch.add_to_cart(list_item[self.MODEL_LOC],
+                                  list_item[self.MODEL_QUANTITY])
+
+        # Vend the Purchase
+        purch.vend()
         self.initItemsView()
-        notebook1.set_current_page(0)        
-                
+        notebook1.set_current_page(0)
+        return
 
     def incrementButtonClicked(self, widget):
         treeView = self.builder.get_object("items_tree_view")
         (model, path) = treeView.get_selection().get_selected()
         if self.itemsListStore[path][self.MODEL_AVAILABLE] > 0:
-            self.itemsListStore[path][self.MODEL_QUANTITY] = self.itemsListStore[path][self.MODEL_QUANTITY] + 1   
+            self.itemsListStore[path][self.MODEL_QUANTITY] = self.itemsListStore[path][self.MODEL_QUANTITY] + 1
             self.itemsListStore[path][self.MODEL_AVAILABLE] = self.itemsListStore[path][self.MODEL_INVENTORY] - self.itemsListStore[path][self.MODEL_QUANTITY]
             self.currentCostLabel = self.builder.get_object("current_cost_label")
             #print self.currentCostLabel.get_label()
@@ -84,18 +95,18 @@ class VendingMachineGTK:
         treeView = self.builder.get_object("items_tree_view")
         (model, path) = treeView.get_selection().get_selected()
         if self.itemsListStore[path][self.MODEL_QUANTITY] > 0:
-            self.itemsListStore[path][self.MODEL_QUANTITY] = self.itemsListStore[path][self.MODEL_QUANTITY] - 1   
+            self.itemsListStore[path][self.MODEL_QUANTITY] = self.itemsListStore[path][self.MODEL_QUANTITY] - 1
             self.itemsListStore[path][self.MODEL_AVAILABLE] = self.itemsListStore[path][self.MODEL_INVENTORY] - self.itemsListStore[path][self.MODEL_QUANTITY]
             self.currentCostLabel = self.builder.get_object("current_cost_label")
             #print self.currentCostLabel.get_label()
             self.mytext = ('Current Cost: $%0.00f' % self.currentCost())
             #print self.mytext
             self.currentCostLabel.set_label(('Current Cost: $%0.2f' % self.currentCost()))
-        
+
     def startButtonClicked(self, widget):
         notebook1 = self.builder.get_object("notebook1")
         notebook1.set_current_page(1)
-        
+
     def page2FwdClicked(self, widget):
         notebook1 = self.builder.get_object("notebook1")
         self.initCheckoutView()
@@ -112,7 +123,7 @@ class VendingMachineGTK:
 
     def quitButtonClicked(self, widget):
         notebook1 = self.builder.get_object("notebook1")
-       
+
 
 ##        for listItem in self.itemsListStore:
 ##            if listItem[MODEL_QUANTITY] > 0:
@@ -134,7 +145,7 @@ class VendingMachineGTK:
 
     def initCheckoutView(self):
         #print (self.itemsListStore)
-        
+
         checkoutView = self.builder.get_object("checkoutView")
         self.currentCostLabel2 = self.builder.get_object("current_cost_label2")
         self.currentCostLabel2.set_label(('Current Cost: $%0.2f' % self.currentCost()))
@@ -145,21 +156,21 @@ class VendingMachineGTK:
                 #print ('Item:', listItem[0], 'PPU:', listItem[1], 'Quantity:', listItem[3])
                 outputString = 'Item:\t', str(listItem[0]), '\t PPU:\t', str(listItem[1]), '\tQuantity:\t', str(listItem[3])
                 finalString = finalString + ''.join( outputString )
-                finalString = finalString + ''.join('\n') 
+                finalString = finalString + ''.join('\n')
         checkoutView.get_buffer().set_text(finalString)
 
     def initItemsView(self):
         self.itemsTreeView = self.builder.get_object("items_tree_view")
         self.itemsListStore = self.builder.get_object("items_list_store")
         self.currentCostLabel = self.builder.get_object("current_cost_label")
-    
+
         self.store = machine.Store()
         items = machine.Item.listItems(self.store);
 
         self.itemsListStore.clear()
         for item in items:
             #print item.info.values()
-            
+
             itemValues = item.info.values()
             itemInfo = itemValues[5]
             itemLoc = itemInfo[0]
@@ -169,10 +180,10 @@ class VendingMachineGTK:
             itemLongName = itemInfo[4]
             itemDesc = itemInfo[5]
             self.itemsListStore.append([itemName, itemCost, itemQty, 0, itemQty, itemLoc])
-        
+
         self.itemsTreeView.get_selection().select_path(0)
         self.currentCostLabel.set_label(('Current Cost: $%0.2f' % 0))
-		
+
 
 if __name__ == "__main__":
 
@@ -192,7 +203,7 @@ if __name__ == "__main__":
     us = machine.User(123456789, 'Zachary')
 ##    us.save()
 ##    us.verify()
-    
+
     hwg = VendingMachineGTK()
     hwg.window.show()
     gtk.main()
