@@ -193,11 +193,12 @@ class User(Store):
     name = None                         # From club member list
     verified = 0                        # Is the User verified as an EHC member?
 
-    def __init__(self, uid=0):
+    def __init__(self, uid=0, name=None):
         '''
         Initialize member vars
         '''
         self.uid = uid
+        self.name = name
         return
 
     def verify(self):
@@ -226,6 +227,19 @@ class User(Store):
         query = '''UPDATE users SET tab=tab+? WHERE uid=?'''
         self.cur.execute(query,[amount,self.uid])
         self.con.commit()
+        return
+    
+    def save(self):
+        '''
+        Store a new User in the table
+        '''
+        query = '''
+            INSERT OR IGNORE INTO users(uid,name,tab)
+            values(?,?,?)'''
+        values = (self.uid, self.name, 0.0)
+        self.cur.execute(query,values)
+        self.con.commit()
+        print 'Saved User('+str(self.uid)+','+self.name+')'
         return
 
 
@@ -396,6 +410,7 @@ class Dispenser(object):
         and provided starting pin number to determine which GPIO to init.
         '''
         self.loc = loc
+        print 'loc ' , loc, ' ', type(loc)
         self.hw_feed = Hardware(loc  ,0)
         self.hw_cut  = Hardware(loc+1,0)
         self.hw_lock = Hardware(loc+2,0)
@@ -449,5 +464,5 @@ def test_purchase():
     print '  -- DONE --'
 
 
-test_db()
-test_purchase()
+#test_db()
+#test_purchase()

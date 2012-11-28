@@ -23,6 +23,7 @@ class VendingMachineGTK:
     MODEL_AVAILABLE = 2
     MODEL_QUANTITY = 3
     MODEL_INVENTORY = 4
+    MODEL_LOC = 5
 
     def __init__(self):
 		
@@ -47,7 +48,7 @@ class VendingMachineGTK:
         }
         self.builder.connect_signals(dic)
 
-        # We just init on app licaiton start - and maybe when the user wants to totally empty the cart
+        # We just init on applicaiton start - and maybe when the user wants to totally empty the cart
         self.initItemsView()
 
     def purchaseClicked(self, widget):
@@ -56,14 +57,14 @@ class VendingMachineGTK:
         cart = []
         for listItem in self.itemsListStore:
             #print listItem
-            if listItem[3] != 0:
-                print ("loc:", listItem[5], "quantity:", listItem[3])
-                tempTuple = (listItem[5],listItem[3])
-                #print tempTuple
+            if listItem[self.MODEL_QUANTITY] != 0:
+                tempTuple = (listItem[self.MODEL_LOC],listItem[self.MODEL_QUANTITY])
                 cart.append(tempTuple)
+                
         #print cart
-        entry = Purchase(999999999, cart)        
+        entry = machine.Purchase(us.uid, cart)        
         entry.vend()
+        self.initItemsView()
         notebook1.set_current_page(0)        
                 
 
@@ -102,6 +103,7 @@ class VendingMachineGTK:
 
     def page2BackClicked(self, widget):
         notebook1 = self.builder.get_object("notebook1")
+        self.initItemsView()
         notebook1.set_current_page(0)
 
     def page3BackClicked(self, widget):
@@ -110,12 +112,14 @@ class VendingMachineGTK:
 
     def quitButtonClicked(self, widget):
         notebook1 = self.builder.get_object("notebook1")
+       
 
-        for listItem in self.itemsListStore:
-            if listItem[3] > 0:
-                #print (listItem[0],listItem[1],listItem[2],listItem[3],listItem[4])
-                listItem[3] = 0
-                listItem[2] = listItem[4]
+##        for listItem in self.itemsListStore:
+##            if listItem[MODEL_QUANTITY] > 0:
+##                #print (listItem[0],listItem[1],listItem[2],listItem[3],listItem[4])
+##                listItem[MODEL_QUANTITY] = 0
+##                listItem[MODEL_AVAILABLE] = listItem[MODEL_INVENTORY]
+        self.initItemsView()
         notebook1.set_current_page(0)
 
     def quit(self, widget):
@@ -144,37 +148,17 @@ class VendingMachineGTK:
                 finalString = finalString + ''.join('\n') 
         checkoutView.get_buffer().set_text(finalString)
 
-    #def initItemsView(self):
-        #notebook1 = self.builder.get_object("notebook1")
-        #self.itemsTreeView = self.builder.get_object("items_tree_view")
-        
-        #item1 = machine.Item(10, 5.00, 100, 'test10', 'long name', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam porttitor faucibus tempus. Nullam neque leo, ultricies sit amet rutrum quis, interdum et metus. In ac risus sapien, sed vestibulum felis. Maecenas luctus semper rutrum. In eget adipiscing mauris. Pellentesque ultricies mattis nunc eu luctus. In eget nisi neque. Ut sit amet dapibus mauris. Donec vel nulla nunc, non lacinia lacus. Pellentesque ac sapien lacinia arcu cursus dignissim. Suspendisse ut sapien sit amet.')
-        #item2 = machine.Item(11, 4.00, 34, 'test11', 'long name', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam porttitor faucibus tempus. Nullam neque leo, ultricies sit amet rutrum quis, interdum et metus. In ac risus sapien, sed vestibulum felis. Maecenas luctus semper rutrum. In eget adipiscing mauris. Pellentesque ultricies mattis nunc eu luctus. In eget nisi neque. Ut sit amet dapibus mauris. Donec vel nulla nunc, non lacinia lacus. Pellentesque ac sapien lacinia arcu cursus dignissim. Suspendisse ut sapien sit amet.')
-        #item3 = machine.Item(12, 2.00, 66, 'test12', 'long name', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam porttitor faucibus tempus. Nullam neque leo, ultricies sit amet rutrum quis, interdum et metus. In ac risus sapien, sed vestibulum felis. Maecenas luctus semper rutrum. In eget adipiscing mauris. Pellentesque ultricies mattis nunc eu luctus. In eget nisi neque. Ut sit amet dapibus mauris. Donec vel nulla nunc, non lacinia lacus. Pellentesque ac sapien lacinia arcu cursus dignissim. Suspendisse ut sapien sit amet.')
-
-        #
-        # For each item we set
-        # Name, cost, available count, quantity to purchase, and inventory amount
-        # Since this is init and called at the beginning of a session - all quantitues are 0 and available = inventory
-        # As items are set to be purchased - available count + quantity to purchase = inventory amount
-        # inventory ampount is for processing convenience and not displayed in a column
-        #
-        #self.itemsListStore = self.builder.get_object("items_list_store")
-        
-        #self.itemsListStore.append([item1.info['name'], item1.info['cost'], item1.info['qty'], 0, item1.info['qty']])
-        #self.itemsListStore.append([item2.info['name'], item2.info['cost'], item2.info['qty'], 0, item2.info['qty']])
-        #self.itemsListStore.append([item3.info['name'], item3.info['cost'], item3.info['qty'], 0, item3.info['qty']])
-
     def initItemsView(self):
         self.itemsTreeView = self.builder.get_object("items_tree_view")
         self.itemsListStore = self.builder.get_object("items_list_store")
-        
-        
+        self.currentCostLabel = self.builder.get_object("current_cost_label")
+    
         self.store = machine.Store()
         items = machine.Item.listItems(self.store);
-        
+
+        self.itemsListStore.clear()
         for item in items:
-            print item.info.values()
+            #print item.info.values()
             
             itemValues = item.info.values()
             itemInfo = itemValues[5]
@@ -185,9 +169,9 @@ class VendingMachineGTK:
             itemLongName = itemInfo[4]
             itemDesc = itemInfo[5]
             self.itemsListStore.append([itemName, itemCost, itemQty, 0, itemQty, itemLoc])
-            
-        #self.store.con.close()
         
+        self.itemsTreeView.get_selection().select_path(0)
+        self.currentCostLabel.set_label(('Current Cost: $%0.2f' % 0))
 		
 
 if __name__ == "__main__":
@@ -204,15 +188,12 @@ if __name__ == "__main__":
 ##    it.save()
 ##    it = cli.Item(15, 5.00, 99, 'test15', 'long name', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam porttitor faucibus tempus. Nullam neque leo, ultricies sit amet rutrum quis, interdum et metus. In ac risus sapien, sed vestibulum felis. Maecenas luctus semper rutrum. In eget adipiscing mauris. Pellentesque ultricies mattis nunc eu luctus. In eget nisi neque. Ut sit amet dapibus mauris. Donec vel nulla nunc, non lacinia lacus. Pellentesque ac sapien lacinia arcu cursus dignissim. Suspendisse ut sapien sit amet.')
 ##    it.save()
-##
-##    store = cli.Store()
-##    items = cli.Item.listItems(store)
-##    #store.con.close()
-##
-##    print 'Items: ', items
 
+    us = machine.User(123456789, 'Zachary')
+##    us.save()
+##    us.verify()
     
     hwg = VendingMachineGTK()
     hwg.window.show()
     gtk.main()
-##    store.con.close()
+
