@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #
-# cli.py
+# machine.py
 # The command line interface for all vending machine operations.
-# This program is designed to run on a Raspberry Pi (RPi) under Linux.
+# This program is designed to run on a Raspberry Pi (RPi) rev 2.0 under Linux.
 #
 
 
@@ -98,7 +98,7 @@ class Item(Store):
             'qty'       : qty,          # quantity in stock for this item
             'name'      : name,         # display name of item (optional)
             'long_name' : long_name,    # full name of item (optional)
-            'desc'      : desc          # 72 words recommended (optional)
+            'desc'      : desc,         # 72 words recommended (optional)
         }
         self.dispenser = Dispenser(loc)
         self.find()
@@ -191,7 +191,7 @@ class User(Store):
     # User info is fetched from the db, not set by the program
     uid  = None                         # From a club member's RPI RFID
     name = None                         # From club member list
-    verified = 0                        # Is the User verified as an EHC member?
+    verified = 0                        # Is User verified as an EHC member?
 
     def __init__(self, uid=0, name=None):
         '''
@@ -206,6 +206,7 @@ class User(Store):
         Verify that the User exists by getting an 11-char hex string from the
         RFID reader and then checking it against the 'users' table.
         '''
+        # todo: read from RPI-RFID and store result in self.uid
         query = '''SELECT uid,name FROM users WHERE uid==? LIMIT 1'''
         self.cur.execute(query,[self.uid])
         result = self.cur.fetchone()
@@ -228,7 +229,7 @@ class User(Store):
         self.cur.execute(query,[amount,self.uid])
         self.con.commit()
         return
-    
+
     def save(self):
         '''
         Store a new User in the table
