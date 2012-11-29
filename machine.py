@@ -475,12 +475,12 @@ class TagReader(object):
     The RFID reader is on Github at rpiEHC/RPI-RFID
     '''
 
+    ser  = None                         # Serial port interface object
     port = None                         # Serial port location
     baud = 9600                         # Clock rate of port
 
-    def __init__(self, port='/dev/ttyACM0', baud=9600):
-        self.port = port                # USB0 is '/dev/ttyUSB0'... that's not what we want.
-        self.baud = baud                # 9600 baud is standard
+    def __init__(self, port='/dev/ttyACM0', baud=9600, time=0):
+        self.ser = serial.Serial(port, baud, timeout=time)
         return
 
     def get(self):
@@ -488,8 +488,8 @@ class TagReader(object):
         Poll the reader over the configured serial connection and return the
         valid result read, which is the uid of the person on the RFID card.
         '''
-        # todo
-        uid = 123456789
+        uid = '--NO CHANGE--'
+        uid = self.ser.readline()
         print 'TagReader.get() returns '+str(uid)
         return uid
 
@@ -538,4 +538,4 @@ def test_rfid():
 
 test_db()
 test_purchase()
-test_rfid()
+#test_rfid()
