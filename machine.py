@@ -9,6 +9,7 @@
 import sys
 import sqlite3
 import time
+import serial
 
 
 class Store(object):
@@ -217,10 +218,32 @@ class Dispenser(object):
         This function is called last when vending an Item().
         '''
         print 'Dispensing '+str(qty)+' Item(s)...'
+
+        # Make the LED blink
+        self.hw_led0.toggle()
+        time.sleep(.1)
+        self.hw_led0.toggle()
+        time.sleep(.1)
+        self.hw_led0.toggle()
+        time.sleep(.1)
+        self.hw_led0.toggle()
+
         # todo: advance a qty of items
-        # todo: cut tape
-        # todo: unlock drawer
-        # todo: indicate.
+        #hw_feed
+
+        # Cut tape
+        self.hw_cut.set(1)
+        time.sleep(.2)
+        self.hw_cut.set(0)
+
+        # Unlock drawer
+        self.hw_lock.set(1)
+
+        # Turn LED on for a few seconds
+        self.hw_led0.set(1)
+        time.sleep(3)
+        self.hw_led0.set(0)
+
         return
 
 
@@ -237,18 +260,20 @@ class User(Store):
 
     def __init__(self, uid=0, name=None):
         '''
-        Initialize member vars
+        Initialize member vars. Try to verify the user and note the result,
+        but don't return an error if verification does not pass. This allows
+        invalid Users to exist, even if they can't do anything.
         '''
         self.uid = uid
         self.name = name
+        self._verify();
         return
 
-    def verify(self):
+    def _verify(self):
         '''
-        Verify that the User exists by getting an 11-char hex string from the
-        RFID reader and then checking it against the 'users' table.
+        Verify that the User exists by checking the uid against the database.
+        This function has nothing to do with the RFID reader hardware.
         '''
-        # todo: read from RPI-RFID and store result in self.uid
         query = '''SELECT uid,name FROM users WHERE uid==? LIMIT 1'''
         self.cur.execute(query,[self.uid])
         result = self.cur.fetchone()
@@ -353,7 +378,7 @@ class Purchase(Store):
         '''
 
         # Is the user a club member?
-        self.user.verify()
+        #self.user._verify() # redundant check
         if self.user.verified==0:
             print "VEND ERROR - User is not a club member"
             return None
@@ -410,18 +435,31 @@ class Hardware(object):
         #cur = GPIO.input(self.pin)
         return cur
 
+    def set(self, signal):
+        '''
+        Set the output signal on this pin (HIGH or LOW)
+        '''
+        if self.mode!=1:#GPIO.OUT:
+            return None
+        if signal==1:
+            self.cur = 1#GPIO.HIGH
+        else:
+            self.cur = 0#GPIO.LOW
+        #GPIO.output(self.pin, self.cur)
+        return self.cur
+
     def toggle(self):
         '''
         Toggle the output signal on this pin (HIGH or LOW)
         '''
         if self.mode!=1:#GPIO.OUT:
             return None
-        if cur==1:#GPIO.HIGH:
-            cur = 0#GPIO.LOW
+        if self.cur==1:#GPIO.HIGH:
+            self.cur = 0#GPIO.LOW
         else:
-            cur = 1#GPIO.HIGH
-        #GPIO.output( self.pin, cur )
-        return cur
+            self.cur = 1#GPIO.HIGH
+        #GPIO.output(self.pin, self.cur)
+        return self.cur
 
     def clear(self):
         '''
@@ -430,6 +468,30 @@ class Hardware(object):
         print "  "+self+".clear() called"
         #GPIO.cleanup()
         return
+
+
+class TagReader(object):
+    '''
+    The RFID reader is on Github at rpiEHC/RPI-RFID
+    '''
+
+    port = None                         # Serial port location
+    baud = 9600                         # Clock rate of port
+
+    def __init__(self, port='/dev/ttyACM0', baud=9600):
+        self.port = port                # USB0 is '/dev/ttyUSB0'... that's not what we want.
+        self.baud = baud                # 9600 baud is standard
+        return
+
+    def get(self):
+        '''
+        Poll the reader over the configured serial connection and return the
+        valid result read, which is the uid of the person on the RFID card.
+        '''
+        # todo
+        uid = 123456789
+        print 'TagReader.get() returns '+str(uid)
+        return uid
 
 
 def test_db():
@@ -465,5 +527,15 @@ def test_purchase():
     print '  -- DONE --'
 
 
+def test_rfid():
+    print '  -- TESTING RFID READER --'
+    reader = TagReader();
+    uid = reader.get();
+    user = User(uid)
+    # _verify() is called by User.__init__ and prints the result
+    print '  -- DONE --'
+
+
 test_db()
 test_purchase()
+test_rfid()
