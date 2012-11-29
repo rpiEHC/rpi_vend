@@ -52,6 +52,25 @@ class VendingMachineGTK:
         # We just init on applicaiton start - and maybe when the user wants to totally empty the cart
         self.initItemsView()
 
+    def wait_for_tag_to_start(self, widget):
+        '''
+        This function polls the RFID reader continuously until a uid is
+        obtained. If the uid is a verified EHC member then the user may
+        proceed. Otherwise, an error screen should be displayed.
+        '''
+        reader = machine.TagReader()
+        uid = reader.get()
+        user = User(uid)    # also called User._verify()
+        if user.verified==1:
+            # go to the next screen
+            notebook1 = self.builder.get_object("notebook1")
+            notebook1.set_current_page(1)
+        else:
+            # go to an error screen
+            self.initItemsView()
+            notebook1.set_current_page(0)  # todo: set the right page (not 0)
+        return
+
     def purchaseClicked(self, widget):
         '''
         This function is called when the user clicks the 'complete purchase'
