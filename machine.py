@@ -218,10 +218,32 @@ class Dispenser(object):
         This function is called last when vending an Item().
         '''
         print 'Dispensing '+str(qty)+' Item(s)...'
+
+        # Make the LED blink
+        self.hw_led0.toggle()
+        time.sleep(.1)
+        self.hw_led0.toggle()
+        time.sleep(.1)
+        self.hw_led0.toggle()
+        time.sleep(.1)
+        self.hw_led0.toggle()
+
         # todo: advance a qty of items
-        # todo: cut tape
-        # todo: unlock drawer
-        # todo: indicate.
+        #hw_feed
+
+        # Cut tape
+        self.hw_cut.set(1)
+        time.sleep(.2)
+        self.hw_cut.set(0)
+
+        # Unlock drawer
+        self.hw_lock.set(1)
+
+        # Turn LED on for a few seconds
+        self.hw_led0.set(1)
+        time.sleep(3)
+        self.hw_led0.set(0)
+
         return
 
 
@@ -413,18 +435,31 @@ class Hardware(object):
         #cur = GPIO.input(self.pin)
         return cur
 
+    def set(self, signal):
+        '''
+        Set the output signal on this pin (HIGH or LOW)
+        '''
+        if self.mode!=1:#GPIO.OUT:
+            return None
+        if signal==1:
+            self.cur = 1#GPIO.HIGH
+        else:
+            self.cur = 0#GPIO.LOW
+        #GPIO.output(self.pin, self.cur)
+        return self.cur
+
     def toggle(self):
         '''
         Toggle the output signal on this pin (HIGH or LOW)
         '''
         if self.mode!=1:#GPIO.OUT:
             return None
-        if cur==1:#GPIO.HIGH:
-            cur = 0#GPIO.LOW
+        if self.cur==1:#GPIO.HIGH:
+            self.cur = 0#GPIO.LOW
         else:
-            cur = 1#GPIO.HIGH
-        #GPIO.output( self.pin, cur )
-        return cur
+            self.cur = 1#GPIO.HIGH
+        #GPIO.output(self.pin, self.cur)
+        return self.cur
 
     def clear(self):
         '''
@@ -451,7 +486,7 @@ class TagReader(object):
     def get(self):
         '''
         Poll the reader over the configured serial connection and return the
-        result read, which is the uid of the person on the RFID card.
+        valid result read, which is the uid of the person on the RFID card.
         '''
         # todo
         uid = 123456789
