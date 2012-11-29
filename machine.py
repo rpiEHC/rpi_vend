@@ -479,8 +479,8 @@ class TagReader(object):
     port = None                         # Serial port location
     baud = 9600                         # Clock rate of port
 
-    def __init__(self, port='/dev/ttyACM0', baud=9600, time=0):
-        self.ser = serial.Serial(port, baud, timeout=time)
+    def __init__(self, port='/dev/ttyACM0', baud=9600, opts='timeout=0'):
+        self.ser = serial.Serial(port, baud, opts)
         return
 
     def get(self):
@@ -492,6 +492,14 @@ class TagReader(object):
         uid = self.ser.readline()
         print 'TagReader.get() returns '+str(uid)
         return uid
+
+    def puke_all(self):
+        '''
+        For debugging purposes...
+        '''
+        while True:
+            output = self.ser.readline()
+            print output
 
 
 def test_db():
@@ -528,14 +536,19 @@ def test_purchase():
 
 
 def test_rfid():
+    # The 'dialout' group can read to USB0, so do sudo usermod -a -G dialout pi;
+    # also try option rtscts=1
+    # via <http://raspberrypi.org/phpBB3/viewtopic.php?f=32&t=6832>
     print '  -- TESTING RFID READER --'
-    reader = TagReader();
+    reader = TagReader('/dev/ttyACM0',9600,'timeout=0,rtscts=1');
     uid = reader.get();
     user = User(uid)
+    if not user.verified:
+        reader.puke_all()
     # _verify() is called by User.__init__ and prints the result
     print '  -- DONE --'
 
 
-test_db()
-test_purchase()
-#test_rfid()
+#test_db()
+#test_purchase()
+test_rfid()
