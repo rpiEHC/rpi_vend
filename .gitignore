@@ -1,12 +1,12 @@
 # Numerous always-ignore extensions
 *.diff
 *.err
-*.orig
 *.log
+*.orig
+*.pyc
 *.rej
 *.swo
 *.swp
-*.pyc
 *.vi
 *~
 
@@ -36,3 +36,5 @@ local.db
 *.geany
 *.bak
 *.NEF
+*.aux
+*.out
